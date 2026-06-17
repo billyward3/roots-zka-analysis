@@ -58,8 +58,18 @@ assets/    diagrams / animation of the key hierarchy and member-add / rotation f
 
 ## Status
 
-Early. The v1 reconstruction is the current focus; modeling and proofs follow once the
-spec is precise enough to formalize.
+v1 reconstruction done and partially machine-checked. Current results (`analysis/RESULTS.md`):
+
+- **Envelope core is confidential** — Tamarin all-traces proof (`model/v1_core.spthy`), matched
+  by the game-based reduction (`proofs/ENVELOPE_ARGUMENT.md`).
+- **The v1 key handoff breaks** — `handoff_key_secrecy` is **falsified** (`model/v1.spthy`): with
+  no member compromise, a malicious server substitutes the newcomer's public key and recovers the
+  family epoch key. A dual key-injection attack is also confirmed.
+
+Next: model revocation/rotation (G3/G4) and recovery (G7), then the strengthened `spec/PROTOCOL_V2.md`
+(key transparency / verified handoff) and re-analysis.
+
+Requires `tamarin-prover` (1.12+) to reproduce; see `analysis/RESULTS.md`.
 
 ## Provenance
 

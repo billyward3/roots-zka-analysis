@@ -1,0 +1,151 @@
+theory RootsZKAv1
+begin
+
+/*
+  Roots ZKA v1 -- symbolic model (Tamarin): the member-add handoff and its attack.
+  Companion to ../spec/PROTOCOL_V1.md. The closed-family envelope core (positive
+  secrecy result G1/G6) is proved separately in v1_core.spthy.
+
+  WHAT THIS FILE SHOWS
+    (NEGATIVE, G5) The v1 member-add handoff delivers the newcomer's public key with
+    NO out-of-band verification (the server -- the adversary, in Dolev-Yao -- relays
+    it). An active adversary substitutes its own public key and recovers the family
+    epoch key with NO member compromise. Proved as an all-traces FALSIFICATION of
+    handoff_key_secrecy, plus an end-to-end exists-trace showing real post content
+    becomes readable purely via the handoff.
+
+    (CONTRAST) content_secrecy_no_handoff: with no handoff for an epoch, content under
+    it stays secret. So the hole is the key distribution, not the envelope.
+
+  MODELLING DECISION (faithfulness note).
+    The real handoff is ECDH-then-wrap: ss = KDF(DH(sk_admin, pk_newcomer)); the epoch
+    key is wrapped under ss. We model its confidentiality as public-key encryption to
+    the newcomer's public key: aenc(epochKey, pk_newcomer). Both are abstractions of
+    the SAME trust relation -- "the epoch key is protected only by a key bound to the
+    newcomer's public key, and that public key is delivered unauthenticated." The
+    substitution attack is identical in both. We use aenc because Tamarin's
+    diffie-hellman AC-rewriting makes the autoproof non-terminating without a custom
+    oracle, whereas the aenc abstraction yields a clean, complete proof. A full
+    DH-builtin model with a proof oracle is noted as future work; it establishes the
+    same property with more machinery. (See spec/PROTOCOL_V1.md §11-B, §11-F.)
+*/
+
+builtins: symmetric-encryption, asymmetric-encryption, hashing
+
+/* ============================================================
+   PKI / identity. Public keys go to the NETWORK (Out): v1 has no out-of-band
+   verification, so the adversary controls public-key delivery (spec §11-F).
+   ============================================================ */
+
+rule Register_User:
+    [ Fr(~ltk) ]
+  --[ Register($U) ]->
+    [ !Ltk($U, ~ltk)
+    , !Pk($U, pk(~ltk))
+    , Out(pk(~ltk)) ]
+
+// Member device compromise: leaks the long-term secret.
+rule Reveal_Ltk:
+    [ !Ltk($U, ~ltk) ]
+  --[ RevealLtk($U) ]->
+    [ Out(~ltk) ]
+
+/* ============================================================
+   Family creation and first epoch. Creator is admin and holds the epoch key.
+   ============================================================ */
+
+rule Create_Family:
+    [ !Pk($A, pkA)
+    , Fr(~ek) ]
+  --[ CreateFamily($F, $A), MkEpoch($F, '1', ~ek) ]->   // MkEpoch tags a GENUINE epoch key
+    [ !Admin($F, $A)
+    , !Holds($A, $F, '1', ~ek) ]
+
+// Member device compromise at the key layer: a holder leaks the epoch key.
+rule Reveal_Holds:
+    [ !Holds($U, $F, e, ek) ]
+  --[ RevealHolds($U, $F, e) ]->
+    [ Out(ek) ]
+
+/* ============================================================
+   Post creation (envelope). Fresh post key seals content; post key wrapped
+   under the epoch key. Only ciphertexts hit the wire.
+   ============================================================ */
+
+rule Create_Post:
+    [ !Holds($U, $F, e, ek)
+    , Fr(~postKey)
+    , Fr(~m) ]
+  --[ Post($F, e), SecretContent($F, e, ek, ~m) ]->    // carry the epoch key used
+    [ Out( senc(~m, ~postKey) )
+    , Out( senc(~postKey, ek) ) ]
+
+/* ============================================================
+   Member-add handoff. Admin protects the epoch key under the newcomer's public
+   key, which it takes FROM THE NETWORK (In) -- unauthenticated (spec §7.1, §11-F).
+   ============================================================ */
+
+rule Add_Member_Admin:
+    [ !Admin($F, $A)
+    , !Holds($A, $F, e, ek)
+    , In( pkW ) ]
+  --[ AdminWrap($F, e), HandoffKey($F, e, ek) ]->
+    [ Out( <$F, e, aenc(ek, pkW)> ) ]
+
+rule Add_Member_New:
+    [ !Ltk($W, ltkW)
+    , In( <$F, e, cipher> ) ]
+  --[ MemberJoin($F, $W, e), Joined($F, $W, e, adec(cipher, ltkW)) ]->
+    [ !Holds($W, $F, e, adec(cipher, ltkW)) ]
+
+/* ============================================================
+   Sanity (executability).
+   ============================================================ */
+
+lemma post_possible:
+  exists-trace
+  "Ex F e #i. Post(F, e) @ i"
+
+lemma handoff_possible:
+  exists-trace
+  "Ex F W e #i. MemberJoin(F, W, e) @ i"
+
+/* ============================================================
+   POSITIVE (envelope soundness) is proved in v1_core.spthy, where the handoff
+   machinery is absent so the all-traces proof terminates oracle-free:
+   post_secrecy_closed -- content under a genuine epoch key is secret unless the
+   epoch is compromised. We do not restate it here; with the handoff rules present
+   the same all-traces lemma needs a proof oracle to terminate (future work).
+   ============================================================ */
+
+/* ============================================================
+   NEGATIVE 1 -- G5, key extraction. The epoch key delivered via the handoff must
+   stay secret even with NO compromise. Expected: FALSIFIED -- the adversary
+   substitutes the newcomer's public key and recovers the genuine epoch key.
+   ============================================================ */
+
+lemma handoff_key_secrecy:
+  all-traces
+  "All F e ek #i.
+      HandoffKey(F, e, ek) @ i
+    & (Ex #c. MkEpoch(F, e, ek) @ c)
+    & (not Ex U #r.  RevealHolds(U, F, e) @ r)
+    & (not Ex U #r2. RevealLtk(U)         @ r2)
+   ==> not (Ex #k. K(ek) @ k)"
+
+/* ============================================================
+   NEGATIVE 2 -- key injection. A second consequence of the unauthenticated PKI:
+   the adversary forges the handoff ciphertext to an HONEST newcomer (using that
+   newcomer's published public key), so the newcomer ends up holding an epoch key
+   the adversary chose -- with NO key reveal. Anything the newcomer then posts is
+   readable by the adversary. Expected: verified (a witness trace = the attack).
+   ============================================================ */
+
+lemma handoff_key_injection:
+  exists-trace
+  "Ex F W e k #i #r.
+        Joined(F, W, e, k) @ i
+      & KU(k) @ r
+      & (not Ex U #x. RevealLtk(U) @ x)"
+
+end

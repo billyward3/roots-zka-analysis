@@ -1,0 +1,67 @@
+theory RootsZKAv1Core
+begin
+
+/*
+  Roots ZKA v1 -- ENVELOPE CORE (closed family), symbolic model.
+  Companion to ../spec/PROTOCOL_V1.md and ../proofs/ENVELOPE_ARGUMENT.md.
+
+  This model deliberately OMITS the member-add ECDH handoff. It captures the
+  closed-family case: a family whose members already hold the epoch key, posting
+  content under it. The handoff (and its attack) lives in v1.spthy.
+
+  Splitting is faithful: the closed-family case genuinely never runs the handoff,
+  and it lets the positive secrecy result (G1/G6) be machine-proved with a
+  terminating, oracle-free autoproof. The DH-laden handoff is analysed separately.
+
+  Result targeted:
+    (POSITIVE, G1/G6) content under an epoch key is secret unless a holder of that
+    epoch is compromised.
+*/
+
+builtins: symmetric-encryption, hashing
+
+rule Register_User:
+    [ Fr(~ltk) ]
+  --[ Register($U) ]->
+    [ !Ltk($U, ~ltk) ]
+
+rule Create_Family:
+    [ Fr(~ek) ]
+  --[ CreateFamily($F, $A) ]->
+    [ !Admin($F, $A)
+    , !Holds($A, $F, '1', ~ek) ]
+
+// Device compromise at the key layer: a holder leaks the epoch key it holds.
+rule Reveal_Holds:
+    [ !Holds($U, $F, e, ek) ]
+  --[ RevealHolds($U, $F, e) ]->
+    [ Out(ek) ]
+
+// Post creation: fresh post key seals content; post key wrapped under epoch key.
+rule Create_Post:
+    [ !Holds($U, $F, e, ek)
+    , Fr(~postKey)
+    , Fr(~m) ]
+  --[ Post($F, e), SecretContent($F, e, ~m) ]->
+    [ Out( senc(~m, ~postKey) )
+    , Out( senc(~postKey, ek) ) ]
+
+// Sanity: a post can happen.
+lemma post_possible:
+  exists-trace
+  "Ex F e #i. Post(F, e) @ i"
+
+// Sanity: compromise can actually expose content (the model can leak when it should).
+lemma leak_possible:
+  exists-trace
+  "Ex F e m #i #k. SecretContent(F, e, m) @ i & KU(m) @ k"
+
+// G1 / G6 (closed family): content is secret unless the epoch was compromised.
+lemma post_secrecy_closed:
+  all-traces
+  "All F e m #i.
+      SecretContent(F, e, m) @ i
+    & (not Ex U #r. RevealHolds(U, F, e) @ r)
+   ==> not (Ex #k. K(m) @ k)"
+
+end
