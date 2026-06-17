@@ -31,6 +31,9 @@ tamarin-prover --prove=handoff_key_injection model/v1.spthy
 | G7 | `recovery_secrecy_g7` | `v1_recovery.spthy` | all-traces | **verified** (9 steps) |
 | G7 | `recovery_via_mnemonic_possible` | `v1_recovery.spthy` | exists-trace | **verified** (7 steps) |
 | G7 | `login_via_password_possible` | `v1_recovery.spthy` | exists-trace | **verified** (8 steps) |
+| v2 | `handoff_key_secrecy_v2` | `v2.spthy` | all-traces | **verified** (9 steps) — extraction closed |
+| v2 | `no_key_injection_v2` | `v2.spthy` | all-traces | **verified** (13 steps) — injection closed |
+| v2 | `handoff_key_secrecy` (partial fix) | `v2_extraction.spthy` | all-traces | **falsified** — both fixes are needed |
 
 ## Result 1 (positive): the envelope core is confidential
 
@@ -103,6 +106,24 @@ content from a once-legitimate member.
 
 This confirms the §5.1 reconciliation (mnemonic is the root; the password unlocks a wrapped copy):
 two independent paths to the root, and a password reset rotates nothing below `MEK`.
+
+## Result 5 (the fix): v2 closes both handoff attacks
+
+`v2.spthy` (design in `../spec/PROTOCOL_V2.md`) authenticates the keys the handoff depends on: the
+newcomer's encryption key via a key-transparency log (`!PkE` lookup, not adversary-controlled
+`In`), and the handoff itself via an unforgeable, verified delivery (`!AuthHandoff`, abstracting a
+signature checked against the admin's logged key).
+
+- **Key extraction — `handoff_key_secrecy_v2` verified (all-traces).** The v1-falsified lemma now
+  holds: the substitution attack is gone.
+- **Key injection — `no_key_injection_v2` verified (all-traces).** A joined member's key is never
+  adversary-known absent a compromise.
+
+**Both fixes are necessary, and that necessity is itself machine-checked.** `v2_extraction.spthy`
+authenticates *only* the newcomer key (leaving the handoff unauthenticated); there,
+`handoff_key_secrecy` is still **falsified** — the injection path plants an attacker-known key that
+re-pollutes extraction. Only authenticating the admin's handoff as well closes it. This is a
+concrete, verified justification for the two-part fix rather than an assertion.
 
 ## Interpretation
 

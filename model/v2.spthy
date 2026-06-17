@@ -1,0 +1,93 @@
+theory RootsZKAv2
+begin
+
+/*
+  Roots ZKA v2 -- strengthened member-add handoff, symbolic model.
+  Companion to ../spec/PROTOCOL_V2.md. Re-analyses the v1 break (model/v1.spthy).
+
+  v2 closes BOTH v1 handoff attacks, and they must be closed together (see
+  model/v2_extraction.spthy: authenticating only the newcomer key leaves the
+  injection path open, which re-pollutes extraction). The two fixes:
+
+    1. Authentic newcomer encryption key -- a !PkE lookup (key-transparency log +
+       out-of-band safety-number check), not an adversary-controlled In().
+       Closes key extraction.
+
+    2. Authentic handoff delivery -- a !AuthHandoff fact only a genuine admin can
+       produce and the newcomer consumes. This abstracts "the newcomer verifies the
+       admin's signature against the admin's transparency-logged signing key"; the
+       adversary cannot forge it. Closes key injection.
+
+  MODELLING NOTES (faithfulness).
+   - Authentic delivery abstracts the signature-verified handoff (a signing-builtin
+     model makes the autoproof non-terminating; the ciphertext aenc(ek,pkeW) is still
+     placed on the wire via Out, so confidentiality faces a real network adversary).
+   - The admin's authoritative epoch key is a dedicated !AdminHolds fact produced
+     ONLY by Create_Family; the handoff hands out !Holds to members. Separating the
+     two breaks the Holds<->handoff source recursion that otherwise prevents the
+     all-traces autoproof from terminating, and it is faithful: only an admin (the
+     DISTRIBUTE_KEYS role) onboards members.
+*/
+
+builtins: symmetric-encryption, asymmetric-encryption
+
+/* ---------- identity: authenticated encryption key (transparency log) ---------- */
+
+rule Register_User:
+    [ Fr(~ske) ]
+  --[ Register($U) ]->
+    [ !LtkE($U, ~ske), !PkE($U, pk(~ske)), Out(pk(~ske)) ]
+
+rule Reveal_LtkE:
+    [ !LtkE($U, ~ske) ] --[ RevealLtkE($U) ]-> [ Out(~ske) ]
+
+/* ---------- family ---------- */
+
+rule Create_Family:
+    [ !PkE($A, pkeA), Fr(~ek) ]
+  --[ MkEpoch($F, '1', ~ek) ]->
+    [ !Admin($F, $A), !AdminHolds($A, $F, '1', ~ek) ]
+
+rule Reveal_AdminHolds:
+    [ !AdminHolds($U, $F, e, ek) ] --[ RevealHolds($U, $F, e) ]-> [ Out(ek) ]
+rule Reveal_Holds:
+    [ !Holds($U, $F, e, ek) ] --[ RevealHolds($U, $F, e) ]-> [ Out(ek) ]
+
+/* ---------- v2 handoff: authentic newcomer key + authentic delivery ---------- */
+
+rule Add_Member_Admin_v2:
+    [ !Admin($F, $A), !AdminHolds($A, $F, e, ek), !PkE($W, pkeW) ]
+  --[ AdminWrap($F, e), HandoffKey($F, e, ek) ]->
+    [ Out( aenc(ek, pkeW) )
+    , !AuthHandoff($A, $W, $F, e, aenc(ek, pkeW)) ]
+
+rule Add_Member_New_v2:
+    [ !LtkE($W, skeW), !AuthHandoff($A, $W, $F, e, cipher) ]
+  --[ MemberJoin($F, $W, e), Joined($F, $W, e, adec(cipher, skeW)) ]->
+    [ !Holds($W, $F, e, adec(cipher, skeW)) ]
+
+/* ---------- sanity ---------- */
+
+lemma handoff_possible:
+  exists-trace
+  "Ex F W e #i. MemberJoin(F, W, e) @ i"
+
+/* ---------- G5 (key extraction) now HOLDS ---------- */
+lemma handoff_key_secrecy_v2:
+  all-traces
+  "All F e ek #i.
+      HandoffKey(F, e, ek) @ i
+    & (not Ex U #r.  RevealHolds(U, F, e) @ r)
+    & (not Ex U #r2. RevealLtkE(U)        @ r2)
+   ==> not (Ex #k. K(ek) @ k)"
+
+/* ---------- G5' (key injection) now HOLDS ---------- */
+lemma no_key_injection_v2:
+  all-traces
+  "All F W e k #i.
+      Joined(F, W, e, k) @ i
+    & (not Ex U #r.  RevealHolds(U, F, e) @ r)
+    & (not Ex U #re. RevealLtkE(U)        @ re)
+   ==> not (Ex #x. K(k) @ x)"
+
+end

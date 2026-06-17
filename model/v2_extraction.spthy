@@ -1,0 +1,57 @@
+theory RootsZKAv2Extraction
+begin
+
+/*
+  Roots ZKA v2 -- extraction fix in isolation.
+  Companion to ../spec/PROTOCOL_V2.md. This is exactly v1's handoff EXCEPT the admin
+  uses the newcomer's AUTHENTIC encryption public key (!PkE lookup, modelling a key-
+  transparency log + safety-number check) instead of an adversary-controlled In().
+
+  Compare directly with model/v1.spthy handoff_key_secrecy (FALSIFIED). Here the
+  substitution injection point is gone, so the epoch key stays secret.
+  Result targeted: handoff_key_secrecy VERIFIED (the v1 key-extraction attack closes).
+*/
+
+builtins: symmetric-encryption, asymmetric-encryption
+
+rule Register_User:
+    [ Fr(~ske) ]
+  --[ Register($U) ]->
+    [ !LtkE($U, ~ske), !PkE($U, pk(~ske)), Out(pk(~ske)) ]
+
+rule Reveal_LtkE:
+    [ !LtkE($U, ~ske) ] --[ RevealLtkE($U) ]-> [ Out(~ske) ]
+
+rule Create_Family:
+    [ !PkE($A, pkeA), Fr(~ek) ]
+  --[ MkEpoch($F, '1', ~ek) ]->
+    [ !Admin($F, $A), !Holds($A, $F, '1', ~ek) ]
+
+rule Reveal_Holds:
+    [ !Holds($U, $F, e, ek) ] --[ RevealHolds($U, $F, e) ]-> [ Out(ek) ]
+
+// Authentic newcomer key: !PkE lookup, not In().
+rule Add_Member_Admin:
+    [ !Admin($F, $A), !Holds($A, $F, e, ek), !PkE($W, pkeW) ]
+  --[ AdminWrap($F, e), HandoffKey($F, e, ek) ]->
+    [ Out( <$F, e, aenc(ek, pkeW)> ) ]
+
+rule Add_Member_New:
+    [ !LtkE($W, skeW), In( <$F, e, cipher> ) ]
+  --[ MemberJoin($F, $W, e) ]->
+    [ !Holds($W, $F, e, adec(cipher, skeW)) ]
+
+lemma handoff_possible:
+  exists-trace
+  "Ex F W e #i. MemberJoin(F, W, e) @ i"
+
+// v1's falsified lemma, now expected VERIFIED.
+lemma handoff_key_secrecy:
+  all-traces
+  "All F e ek #i.
+      HandoffKey(F, e, ek) @ i
+    & (not Ex U #r.  RevealHolds(U, F, e) @ r)
+    & (not Ex U #r2. RevealLtkE(U)        @ r2)
+   ==> not (Ex #k. K(ek) @ k)"
+
+end

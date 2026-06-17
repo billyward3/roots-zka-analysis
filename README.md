@@ -58,16 +58,21 @@ assets/    diagrams / animation of the key hierarchy and member-add / rotation f
 
 ## Status
 
-v1 reconstruction done and partially machine-checked. Current results (`analysis/RESULTS.md`):
+Reconstruct-then-strengthen arc complete and machine-checked (`analysis/RESULTS.md`):
 
-- **Envelope core is confidential** — Tamarin all-traces proof (`model/v1_core.spthy`), matched
-  by the game-based reduction (`proofs/ENVELOPE_ARGUMENT.md`).
-- **The v1 key handoff breaks** — `handoff_key_secrecy` is **falsified** (`model/v1.spthy`): with
-  no member compromise, a malicious server substitutes the newcomer's public key and recovers the
-  family epoch key. A dual key-injection attack is also confirmed.
+- **Envelope core is confidential** — Tamarin all-traces proof (`model/v1_core.spthy`), matched by
+  the game-based reduction (`proofs/ENVELOPE_ARGUMENT.md`).
+- **Rotation, revocation, recovery are sound** — G3/G4 (`model/v1_rotation.spthy`) and G7
+  (`model/v1_recovery.spthy`) verified.
+- **The v1 key handoff breaks** — `handoff_key_secrecy` **falsified** (`model/v1.spthy`): with no
+  member compromise, a malicious server substitutes the newcomer's public key and recovers the
+  family epoch key; a dual key-injection attack is also confirmed.
+- **v2 closes it** — with a key-transparency log + verified handoff (`spec/PROTOCOL_V2.md`,
+  `model/v2.spthy`), both attacks are **verified** closed. And `model/v2_extraction.spthy` proves a
+  partial fix is insufficient (still falsified), so the two-part fix is justified, not asserted.
 
-Next: model revocation/rotation (G3/G4) and recovery (G7), then the strengthened `spec/PROTOCOL_V2.md`
-(key transparency / verified handoff) and re-analysis.
+Next: deeper modelling of the v2 follow-ups (ephemeral prekeys, context-bound wrap), a reference
+implementation in `impl/`, and a presentation diagram/animation in `assets/`.
 
 Requires `tamarin-prover` (1.12+) to reproduce; see `analysis/RESULTS.md`.
 
