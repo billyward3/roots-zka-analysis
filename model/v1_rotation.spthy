@@ -1,0 +1,95 @@
+theory RootsZKAv1Rotation
+begin
+
+/*
+  Roots ZKA v1 -- epoch rotation / revocation, symbolic model.
+  Companion to ../spec/PROTOCOL_V1.md (§7.2, claims G3 and G4).
+
+  Setup: a family with admin A and member R, both holding the epoch-1 key.
+  R is removed by rotating to a fresh epoch-2 key delivered ONLY to the remaining
+  member A (R is excluded). R keeps the epoch-1 key it already held.
+
+  Symmetric-only (no DH / no handoff), so the all-traces proofs terminate oracle-free.
+  We abstract onboarding (both members simply hold epoch-1 at creation) because the
+  handoff is analysed in v1.spthy; here the object of study is the rotation boundary.
+
+  Results targeted:
+    (G3) revocation correctness: a removed member, even with ALL of its retained
+         state (the epoch-1 key), cannot read epoch-2 content.
+    (G4) bounded forward secrecy: compromise of one epoch's key does not expose
+         another epoch's content (epochs are independent fresh keys).
+*/
+
+builtins: symmetric-encryption
+
+// Family creation: admin A and member R both hold the epoch-1 key.
+rule Create_Family:
+    [ Fr(~ek1) ]
+  --[ MkEpoch($F, '1', ~ek1), Member($F, $A), Member($F, $R) ]->
+    [ !Admin($F, $A)
+    , !Epoch($F, '1', ~ek1)
+    , !Holds($A, $F, '1', ~ek1)
+    , !Holds($R, $F, '1', ~ek1) ]
+
+// Device compromise: a holder leaks an epoch key it holds.
+rule Reveal_Holds:
+    [ !Holds($U, $F, e, ek) ]
+  --[ RevealHolds($U, $F, e) ]->
+    [ Out(ek) ]
+
+// Post creation under whatever epoch key the poster holds.
+rule Create_Post:
+    [ !Holds($U, $F, e, ek)
+    , Fr(~postKey)
+    , Fr(~m) ]
+  --[ SecretContent($F, e, ek, ~m) ]->
+    [ Out( senc(~m, ~postKey) )
+    , Out( senc(~postKey, ek) ) ]
+
+// Rotation that removes R: a fresh epoch-2 key is delivered to the remaining
+// member A only. R is NOT given the new key (it keeps epoch-1).
+rule Rotate_Remove_R:
+    [ !Admin($F, $A)
+    , !Epoch($F, '1', oldek)
+    , Fr(~ek2) ]
+  --[ Rotate($F, '2', ~ek2), MkEpoch($F, '2', ~ek2), Removed($F, $R) ]->
+    [ !Epoch($F, '2', ~ek2)
+    , !Holds($A, $F, '2', ~ek2) ]
+
+/* ---------- sanity ---------- */
+
+lemma post_possible:
+  exists-trace
+  "Ex F e ek m #i. SecretContent(F, e, ek, m) @ i"
+
+lemma rotate_possible:
+  exists-trace
+  "Ex F ek2 #i. Rotate(F, '2', ek2) @ i"
+
+// Non-vacuity: a compromised epoch-1 key really does expose epoch-1 content,
+// so the secrecy lemmas below are not holding merely because nothing ever leaks.
+lemma epoch1_leak_possible:
+  exists-trace
+  "Ex F ek1 m #i #k. SecretContent(F, '1', ek1, m) @ i & K(m) @ k"
+
+/* ---------- G3: revocation correctness ---------- */
+// Epoch-2 content is secret as long as no epoch-2 key is leaked -- EVEN IF every
+// epoch-1 key (everything the removed member R retained) is revealed.
+lemma revocation_g3:
+  all-traces
+  "All F ek2 m #i.
+      SecretContent(F, '2', ek2, m) @ i
+    & (not Ex U #r. RevealHolds(U, F, '2') @ r)
+   ==> not (Ex #k. K(m) @ k)"
+
+/* ---------- G4: bounded forward secrecy (epoch independence) ---------- */
+// Epoch-1 content is secret as long as no epoch-1 key is leaked -- EVEN IF the
+// epoch-2 key is revealed. Compromise of one epoch does not cross to another.
+lemma epoch_independence_g4:
+  all-traces
+  "All F ek1 m #i.
+      SecretContent(F, '1', ek1, m) @ i
+    & (not Ex U #r. RevealHolds(U, F, '1') @ r)
+   ==> not (Ex #k. K(m) @ k)"
+
+end

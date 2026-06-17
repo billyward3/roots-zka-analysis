@@ -1,0 +1,73 @@
+theory RootsZKAv1Recovery
+begin
+
+/*
+  Roots ZKA v1 -- account key hierarchy and recovery, symbolic model.
+  Companion to ../spec/PROTOCOL_V1.md (§5.1, claim G7).
+
+  Models the resolved keystore design (spec §5.1):
+    MEK   = h(mnemonic seed)         -- the root; mnemonic is canonical
+    pwKey = h(password)              -- Argon2id abstracted as a hash
+  Server stores, and the adversary sees:
+    senc(MEK, pwKey)                 -- wrappedMEK: the password unlock path
+    senc(ck,  MEK)                   -- a content/account key wrapped under MEK
+    senc(m,   ck)                    -- content
+
+  Two unlock paths reach the content (mnemonic OR password); neither path's secret
+  being known leaves the content secret despite all server blobs being public.
+  Symmetric + hashing only, so all-traces proofs terminate oracle-free.
+*/
+
+builtins: symmetric-encryption, hashing
+
+rule Setup_Account:
+    [ Fr(~seed), Fr(~pw), Fr(~ck), Fr(~m) ]
+  --[ SetupAccount(), SecretMsg(~m) ]->
+    [ !Acct(~seed, ~pw, ~ck, ~m)
+    , Out( senc(h(~seed), h(~pw)) )   // wrappedMEK  (MEK = h(seed), pwKey = h(pw))
+    , Out( senc(~ck, h(~seed)) )      // wrap(ck, MEK)
+    , Out( senc(~m, ~ck) ) ]          // content under ck
+
+// Recovery-phrase compromise (the mnemonic leaks).
+rule Reveal_Seed:
+    [ !Acct(~seed, ~pw, ~ck, ~m) ]
+  --[ RevealSeed() ]->
+    [ Out(~seed) ]
+
+// Password compromise.
+rule Reveal_Pw:
+    [ !Acct(~seed, ~pw, ~ck, ~m) ]
+  --[ RevealPw() ]->
+    [ Out(~pw) ]
+
+/* ---------- G7 liveness: either path alone recovers the content ---------- */
+
+// Mnemonic alone (no password) reconstructs MEK and unwraps everything.
+lemma recovery_via_mnemonic_possible:
+  exists-trace
+  "Ex m #i #k.
+        SecretMsg(m) @ i
+      & K(m) @ k
+      & (Ex #s. RevealSeed() @ s)
+      & (not Ex #p. RevealPw() @ p)"
+
+// Password alone unlocks the wrapped MEK and thence the content.
+lemma login_via_password_possible:
+  exists-trace
+  "Ex m #i #k.
+        SecretMsg(m) @ i
+      & K(m) @ k
+      & (Ex #p. RevealPw() @ p)
+      & (not Ex #s. RevealSeed() @ s)"
+
+/* ---------- G7 secrecy: neither path known => content stays secret ---------- */
+
+lemma recovery_secrecy_g7:
+  all-traces
+  "All m #i.
+      SecretMsg(m) @ i
+    & (not Ex #s. RevealSeed() @ s)
+    & (not Ex #p. RevealPw() @ p)
+   ==> not (Ex #k. K(m) @ k)"
+
+end

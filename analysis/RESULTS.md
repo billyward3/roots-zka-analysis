@@ -9,7 +9,9 @@ Reproduce:
 
 ```
 tamarin-prover --prove model/v1_core.spthy            # positive result (closed family)
-tamarin-prover --prove=post_possible model/v1.spthy   # per-lemma (autoprover terminates per lemma)
+tamarin-prover --prove model/v1_rotation.spthy        # revocation / forward secrecy (G3, G4)
+tamarin-prover --prove model/v1_recovery.spthy        # recovery (G7)
+tamarin-prover --prove=post_possible model/v1.spthy   # handoff: per-lemma (autoprover terminates per lemma)
 tamarin-prover --prove=handoff_key_secrecy model/v1.spthy
 tamarin-prover --prove=handoff_key_injection model/v1.spthy
 ```
@@ -23,6 +25,12 @@ tamarin-prover --prove=handoff_key_injection model/v1.spthy
 | — | `post_possible`, `handoff_possible` | `v1.spthy` | exists-trace | verified (sanity) |
 | G5 | `handoff_key_secrecy` | `v1.spthy` | all-traces | **falsified** (6 steps) |
 | G5′ | `handoff_key_injection` | `v1.spthy` | exists-trace | **verified** (6 steps) |
+| G3 | `revocation_g3` | `v1_rotation.spthy` | all-traces | **verified** (6 steps) |
+| G4 | `epoch_independence_g4` | `v1_rotation.spthy` | all-traces | **verified** (12 steps) |
+| — | `epoch1_leak_possible` (non-vacuity) | `v1_rotation.spthy` | exists-trace | verified |
+| G7 | `recovery_secrecy_g7` | `v1_recovery.spthy` | all-traces | **verified** (9 steps) |
+| G7 | `recovery_via_mnemonic_possible` | `v1_recovery.spthy` | exists-trace | **verified** (7 steps) |
+| G7 | `login_via_password_possible` | `v1_recovery.spthy` | exists-trace | **verified** (8 steps) |
 
 ## Result 1 (positive): the envelope core is confidential
 
@@ -66,6 +74,36 @@ known). Everything the newcomer subsequently posts is readable by the adversary,
 believes they are inside the family's encryption. Verified as a reachable state (witness trace =
 the attack).
 
+## Result 3 (positive): revocation works, and forward secrecy is bounded as designed
+
+`v1_rotation.spthy` models a family of admin `A` and member `R`, both holding the epoch-1 key;
+`R` is removed by rotating to a fresh epoch-2 key delivered only to `A`.
+
+- **G3, revocation correctness — verified (all-traces).** Epoch-2 content stays secret even if
+  *everything `R` retained* (the epoch-1 key) is revealed. Removal cryptographically blocks new
+  content.
+- **G4, bounded forward secrecy — verified (all-traces).** Epoch-1 content stays secret if the
+  epoch-1 key is not revealed, *even if the epoch-2 key is*. Epochs are independent; a compromise
+  does not cross between them.
+
+This also makes the spec's accepted tradeoff precise (`spec §7.2`): `R` keeps the epoch-1 key it
+already held, so it can still read *old* content. That is by design (lifetime retention), not a
+break. G3 guarantees no *new* content; it deliberately does not claim retroactive secrecy of past
+content from a once-legitimate member.
+
+## Result 4 (positive): recovery is sound, with two unlock paths
+
+`v1_recovery.spthy` models the resolved keystore design (`spec §5.1`): `MEK = h(mnemonic seed)`,
+`pwKey = h(password)`, server stores `senc(MEK, pwKey)`, `senc(ck, MEK)`, `senc(m, ck)`.
+
+- **Liveness — verified.** The mnemonic alone recovers the content (`recovery_via_mnemonic_possible`),
+  and the password alone unlocks it (`login_via_password_possible`).
+- **G7, secrecy — verified (all-traces).** With neither the mnemonic seed nor the password known,
+  the content stays secret despite all server-stored blobs being public.
+
+This confirms the §5.1 reconciliation (mnemonic is the root; the password unlocks a wrapped copy):
+two independent paths to the root, and a password reset rotates nothing below `MEK`.
+
 ## Interpretation
 
 The two layers compose to one honest verdict: **the cryptographic construction is sound; the key
@@ -91,5 +129,8 @@ contradiction into a concrete trace.
 - **All-traces positive secrecy in the full model** (with the handoff rules present) likewise needs
   an oracle to terminate; the closed-family `v1_core.spthy` proof covers the positive statement
   cleanly, so this is a termination limitation, not an unknown.
-- **Scope.** Revocation/rotation (G3/G4), profile keys, and recovery (G7) are specified but not yet
-  modelled. Next iteration.
+- **Scope now covered:** G1/G6 (envelope), G3/G4 (rotation), G5 (handoff break), G7 (recovery).
+  G2 (access-control soundness) is implied by the secrecy lemmas (decryption requires the wrapped
+  key). **Not yet modelled:** profile-key distribution as a distinct flow, and multi-family
+  isolation. Next: the strengthened `PROTOCOL_V2.md` (verified handoff) and its re-analysis showing
+  the G5 attack closes.
