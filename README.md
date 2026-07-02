@@ -43,7 +43,7 @@ A layered approach, because no single tool covers all of it honestly:
 |---|---|---|
 | Protocol + access-control state machine | **Tamarin** (symbolic, Dolev-Yao) | secrecy, authentication, and revocation lemmas over evolving epoch/membership state |
 | Envelope construction (DEK/KEK, AES-KW + AES-GCM) | game-based reduction (hand, optionally CryptoVerif) | content confidentiality reduces to standard AEAD / key-wrap security |
-| Reference implementation of the primitives | tested Dart/TS code | the proofs correspond to runnable, known-answer-tested code |
+| Reference implementation of the primitives | tested Rust (`impl/`) | the proofs correspond to runnable, known-answer-tested code; the v1 attack and v2 fix run as tests |
 
 ## Layout
 
@@ -70,9 +70,13 @@ Reconstruct-then-strengthen arc complete and machine-checked (`analysis/RESULTS.
 - **v2 closes it** — with a key-transparency log + verified handoff (`spec/PROTOCOL_V2.md`,
   `model/v2.spthy`), both attacks are **verified** closed. And `model/v2_extraction.spthy` proves a
   partial fix is insufficient (still falsified), so the two-part fix is justified, not asserted.
+- **The proofs correspond to running code** — `impl/` is a Rust reference implementation (14 tests):
+  known-answer vectors pin the primitives to RFC 3394 / RFC 7748 / BIP39, property tests discharge
+  the four envelope obligations, and the v1 handoff attack and v2 defense run as tests that mirror
+  the Tamarin verdicts. See `impl/README.md` for the test-to-proof map.
 
-Next: deeper modelling of the v2 follow-ups (ephemeral prekeys, context-bound wrap), a reference
-implementation in `impl/`, and a presentation diagram/animation in `assets/`.
+Next: deeper modelling of the v2 follow-ups (ephemeral prekeys, context-bound wrap), and a
+presentation diagram/animation in `assets/`.
 
 Requires `tamarin-prover` (1.12+) to reproduce; see `analysis/RESULTS.md`.
 

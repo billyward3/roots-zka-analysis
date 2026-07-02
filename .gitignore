@@ -1,6 +1,7 @@
 # build / tool artifacts
 *.spthy.tmp
 proofs/output/
+impl/target/
 impl/node_modules/
 impl/coverage/
 .DS_Store
