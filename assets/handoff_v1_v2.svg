@@ -63,7 +63,7 @@
     <text x="380" y="564" text-anchor="middle" fill="#f8b4b4" font-size="13">The server is the design's named primary adversary, and no member was compromised.</text>
 
     <!-- verdict tag -->
-    <text x="380" y="646" text-anchor="middle" fill="#f87171" font-size="20" font-weight="700">v1</text>
+    <text x="380" y="646" text-anchor="middle" fill="#f87171" font-size="20" font-weight="700">v1  &#183;  original</text>
     <text x="380" y="674" text-anchor="middle" fill="#e2e8f0" font-size="15" font-family="monospace">handoff_key_secrecy: FALSIFIED</text>
   </g>
 
@@ -106,7 +106,7 @@
     <text x="1100" y="540" text-anchor="middle" fill="#6ee7b7" font-size="15" font-weight="700">Substitution has no effect. Forged handoff fails the signature.</text>
     <text x="1100" y="564" text-anchor="middle" fill="#a7f3d0" font-size="13">The log's binding of W to pk_W is the trust anchor the server cannot forge.</text>
 
-    <text x="1100" y="646" text-anchor="middle" fill="#34d399" font-size="20" font-weight="700">v2</text>
+    <text x="1100" y="646" text-anchor="middle" fill="#34d399" font-size="20" font-weight="700">v2  &#183;  Heirloom</text>
     <text x="1100" y="674" text-anchor="middle" fill="#e2e8f0" font-size="15" font-family="monospace">handoff_key_secrecy_v2: VERIFIED</text>
   </g>
 

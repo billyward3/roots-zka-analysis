@@ -1,10 +1,15 @@
-# Roots ZKA v2: Strengthened Protocol (the "what I'd do now")
+# Roots ZKA v2: the Heirloom handoff (strengthened protocol)
 
 > The strengthening half of reconstruct-then-strengthen. v1 (`PROTOCOL_V1.md`) was analysed and
 > found to have a sound cryptographic core but a broken key distribution: the member-add handoff
 > trusts public keys the server delivers without verification, which a malicious server exploits
 > two ways (`../analysis/RESULTS.md`, Result 2). v2 keeps everything that was proved sound and
 > replaces only the handoff trust model.
+>
+> The strengthened handoff has a name: **Heirloom**. It is an authenticated, transparency-anchored
+> historical-key handoff, the mechanism that lets a new family member securely *inherit* the
+> family's key history rather than trust the server to deliver it. Naming applies to this mechanism
+> only; the surrounding envelope (DEK/KEK, AES-KW, AES-GCM) is standard and unnamed.
 >
 > Every change here is motivated by a specific v1 finding, and the headline ones are machine-checked
 > (`../model/v2.spthy`).

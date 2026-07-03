@@ -7,7 +7,7 @@
 //! * [`v1_admin_wrap`] / [`v1_newcomer_unwrap`] mirror `model/v1.spthy`, where the newcomer's
 //!   public key is whatever the (untrusted) server hands the admin. `handoff_key_secrecy` is
 //!   FALSIFIED there, and [`v1_admin_wrap`] reproduces that trace against a malicious directory.
-//! * [`v2_admin_wrap`] / [`v2_newcomer_unwrap`] mirror `model/v2.spthy`: the newcomer key comes
+//! * [`v2_admin_wrap`] / [`v2_newcomer_unwrap`] mirror `model/v2.spthy` (the Heirloom handoff): the newcomer key comes
 //!   from an append-only transparency log the newcomer can audit, and the handoff is signed by the
 //!   admin's transparency-logged key. Both fixes are required (`model/v2_extraction.spthy` shows a
 //!   partial fix stays FALSIFIED), so both are present here.

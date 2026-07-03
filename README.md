@@ -22,9 +22,11 @@ its primary threat: the server.
   attacker, and all family content falls. No member is ever compromised.
 - The underlying encryption construction is sound, verified two independent ways. The break is
   entirely in key distribution, not in the envelope.
-- A v2 handoff (key-transparency log plus authenticated delivery) closes both the extraction and
-  injection variants, machine-verified. A partial fix is proven insufficient, so the two-part fix is
-  justified rather than asserted.
+- A strengthened v2 handoff, **Heirloom** (key-transparency log plus authenticated delivery), closes
+  both the extraction and injection variants, machine-verified. A partial fix is proven insufficient,
+  so the two-part fix is justified rather than asserted. Heirloom is the one mechanism this project
+  names: an authenticated, transparency-anchored way for a new member to *inherit* the family's key
+  history. The envelope around it is standard.
 
 Every claim above is machine-checked: Tamarin for the protocol, a game-based reduction for the
 encryption core, and a Rust reference implementation whose tests reproduce both the attack and its
@@ -106,7 +108,12 @@ assets/    diagrams of the key hierarchy and the handoff attack/fix
 
 ## Scope and honesty
 
-This is an analysis artifact, not a product, and it is written to be honest about its own limits.
+**This is a security-analysis artifact, not audited cryptographic software.** The reconstructed v1
+is a broken design, kept broken on purpose. The v2 Heirloom design has not been independently
+audited, and the reference code is written for clarity, not deployment. Do not use any of it in
+production.
+
+It is written to be honest about its own limits.
 
 - The symbolic model is Dolev-Yao (perfect cryptography). It proves the protocol logic has no
   key-substitution trace; the separate game-based argument covers computational security of the

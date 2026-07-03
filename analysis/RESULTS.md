@@ -107,7 +107,7 @@ content from a once-legitimate member.
 This confirms the §5.1 reconciliation (mnemonic is the root; the password unlocks a wrapped copy):
 two independent paths to the root, and a password reset rotates nothing below `MEK`.
 
-## Result 5 (the fix): v2 closes both handoff attacks
+## Result 5 (the fix): the Heirloom handoff (v2) closes both attacks
 
 `v2.spthy` (design in `../spec/PROTOCOL_V2.md`) authenticates the keys the handoff depends on: the
 newcomer's encryption key via a key-transparency log (`!PkE` lookup, not adversary-controlled
