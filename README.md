@@ -30,6 +30,8 @@ Every claim above is machine-checked: Tamarin for the protocol, a game-based red
 encryption core, and a Rust reference implementation whose tests reproduce both the attack and its
 fix.
 
+![The v1 handoff attack (a malicious server substitutes a key and recovers the family epoch key) beside the v2 fix (a transparency log plus signed handoff defeats the same adversary).](assets/handoff_v1_v2.png)
+
 ## The idea worth remembering
 
 Most end-to-end-encrypted systems are messaging systems, and messaging crypto is built around

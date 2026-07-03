@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="806" viewBox="0 0 1480 806" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#f87171"/>
+    </marker>
+    <marker id="arGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#34d399"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="806" fill="#0f172a"/>
+
+  <!-- title block -->
+  <text x="740" y="52" text-anchor="middle" fill="#f1f5f9" font-size="30" font-weight="700">The historical key handoff: where lifetime retention meets its adversary</text>
+  <text x="740" y="84" text-anchor="middle" fill="#94a3b8" font-size="16">A new family member must inherit the epoch key to read past content. In both panels the adversary is the server, and no member is ever compromised.</text>
+
+  <!-- divider -->
+  <line x1="740" y1="120" x2="740" y2="792" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- ================= PANEL A : v1 broken ================= -->
+  <g>
+    <!-- actor boxes -->
+    <g fill="#1e293b" stroke="#334155" stroke-width="1.5">
+      <rect x="83" y="132" width="140" height="46" rx="8"/>
+      <rect x="310" y="132" width="140" height="46" rx="8"/>
+      <rect x="537" y="132" width="140" height="46" rx="8"/>
+    </g>
+    <text x="153" y="160" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="600">Newcomer W</text>
+    <text x="380" y="154" text-anchor="middle" fill="#fca5a5" font-size="15" font-weight="600">Server</text>
+    <text x="380" y="170" text-anchor="middle" fill="#f87171" font-size="12">(malicious / PKI)</text>
+    <text x="607" y="160" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="600">Admin A</text>
+
+    <!-- lifelines -->
+    <g stroke="#334155" stroke-width="1.5" stroke-dasharray="3 5">
+      <line x1="153" y1="178" x2="153" y2="506"/>
+      <line x1="380" y1="178" x2="380" y2="506"/>
+      <line x1="607" y1="178" x2="607" y2="506"/>
+    </g>
+
+    <!-- messages -->
+    <!-- 1: W -> Server publish -->
+    <text x="266" y="222" text-anchor="middle" fill="#cbd5e1" font-size="13">1. publish pk_W</text>
+    <line x1="153" y1="232" x2="380" y2="232" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+    <!-- 2: Admin -> Server request -->
+    <text x="493" y="282" text-anchor="middle" fill="#cbd5e1" font-size="13">2. request newcomer key</text>
+    <line x1="607" y1="292" x2="380" y2="292" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+    <!-- 3: Server -> Admin substituted key (RED) -->
+    <text x="493" y="342" text-anchor="middle" fill="#f87171" font-size="13" font-weight="600">3. return pk_ATT  (substituted)</text>
+    <line x1="380" y1="352" x2="607" y2="352" stroke="#f87171" stroke-width="2.5" marker-end="url(#arRed)"/>
+    <!-- 4: Admin -> Server wrap -->
+    <text x="493" y="402" text-anchor="middle" fill="#cbd5e1" font-size="13">4. wrap(EK, pk_ATT)</text>
+    <line x1="607" y1="412" x2="380" y2="412" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+    <!-- 5: Server action pill (RED) -->
+    <rect x="300" y="446" width="160" height="34" rx="17" fill="#3b1d1d" stroke="#f87171" stroke-width="1.5"/>
+    <text x="380" y="468" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="600">5. adec &#8594; recovers EK</text>
+
+    <!-- outcome banner -->
+    <rect x="83" y="512" width="594" height="72" rx="10" fill="#2a1515" stroke="#7f1d1d" stroke-width="1.5"/>
+    <text x="380" y="540" text-anchor="middle" fill="#fca5a5" font-size="15" font-weight="700">Epoch key leaked. All family content readable.</text>
+    <text x="380" y="564" text-anchor="middle" fill="#f8b4b4" font-size="13">The server is the design's named primary adversary, and no member was compromised.</text>
+
+    <!-- verdict tag -->
+    <text x="380" y="646" text-anchor="middle" fill="#f87171" font-size="20" font-weight="700">v1</text>
+    <text x="380" y="674" text-anchor="middle" fill="#e2e8f0" font-size="15" font-family="monospace">handoff_key_secrecy: FALSIFIED</text>
+  </g>
+
+  <!-- ================= PANEL B : v2 fixed ================= -->
+  <g>
+    <g fill="#1e293b" stroke="#334155" stroke-width="1.5">
+      <rect x="803" y="132" width="140" height="46" rx="8"/>
+      <rect x="1030" y="132" width="140" height="46" rx="8"/>
+      <rect x="1257" y="132" width="140" height="46" rx="8"/>
+    </g>
+    <text x="873" y="160" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="600">Newcomer W</text>
+    <text x="1100" y="154" text-anchor="middle" fill="#6ee7b7" font-size="15" font-weight="600">Transparency Log</text>
+    <text x="1100" y="170" text-anchor="middle" fill="#34d399" font-size="12">(append-only, auditable)</text>
+    <text x="1327" y="160" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="600">Admin A</text>
+
+    <g stroke="#334155" stroke-width="1.5" stroke-dasharray="3 5">
+      <line x1="873" y1="178" x2="873" y2="506"/>
+      <line x1="1100" y1="178" x2="1100" y2="506"/>
+      <line x1="1327" y1="178" x2="1327" y2="506"/>
+    </g>
+
+    <!-- 1: W -> Log publish -->
+    <text x="986" y="222" text-anchor="middle" fill="#cbd5e1" font-size="13">1. publish pk_W (append-only)</text>
+    <line x1="873" y1="232" x2="1100" y2="232" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+    <!-- 2: Admin -> Log lookup -->
+    <text x="1213" y="282" text-anchor="middle" fill="#cbd5e1" font-size="13">2. lookup pk_W</text>
+    <line x1="1327" y1="292" x2="1100" y2="292" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+    <!-- 3: Log -> Admin authentic (GREEN) -->
+    <text x="1213" y="342" text-anchor="middle" fill="#34d399" font-size="13" font-weight="600">3. authentic pk_W  (no equivocation)</text>
+    <line x1="1100" y1="352" x2="1327" y2="352" stroke="#34d399" stroke-width="2.5" marker-end="url(#arGreen)"/>
+    <!-- 4: Admin -> W wrap+sign (GREEN, spans) -->
+    <text x="1100" y="402" text-anchor="middle" fill="#34d399" font-size="13" font-weight="600">4. wrap(EK, pk_W) + sign</text>
+    <line x1="1327" y1="412" x2="873" y2="412" stroke="#34d399" stroke-width="2.5" marker-end="url(#arGreen)"/>
+    <!-- 5: W action pill (GREEN) -->
+    <rect x="785" y="446" width="176" height="34" rx="17" fill="#12291f" stroke="#34d399" stroke-width="1.5"/>
+    <text x="873" y="468" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="600">5. verify sig, unwrap EK &#10003;</text>
+
+    <!-- outcome banner -->
+    <rect x="803" y="512" width="594" height="72" rx="10" fill="#0f2a1e" stroke="#166534" stroke-width="1.5"/>
+    <text x="1100" y="540" text-anchor="middle" fill="#6ee7b7" font-size="15" font-weight="700">Substitution has no effect. Forged handoff fails the signature.</text>
+    <text x="1100" y="564" text-anchor="middle" fill="#a7f3d0" font-size="13">The log's binding of W to pk_W is the trust anchor the server cannot forge.</text>
+
+    <text x="1100" y="646" text-anchor="middle" fill="#34d399" font-size="20" font-weight="700">v2</text>
+    <text x="1100" y="674" text-anchor="middle" fill="#e2e8f0" font-size="15" font-family="monospace">handoff_key_secrecy_v2: VERIFIED</text>
+  </g>
+
+  <!-- footer note -->
+  <text x="740" y="742" text-anchor="middle" fill="#8595a8" font-size="13">Both fixes are required: authenticating only the newcomer key leaves the injection path open (v2_extraction.spthy, still falsified).</text>
+  <text x="740" y="770" text-anchor="middle" fill="#7688a0" font-size="12.5">Machine-checked in Tamarin. Reproduced as tests in impl/tests/attack.rs.</text>
+</svg>
