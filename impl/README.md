@@ -1,4 +1,4 @@
-# `impl/` — reference implementation
+# `impl/`: reference implementation
 
 A small runnable Rust crate whose only job is to make the analysis in this repo checkable against
 real code. It is not a re-implementation of the Roots app. Every primitive matches a decision in
@@ -33,7 +33,7 @@ Requires a recent stable Rust (edition 2024 dependencies; tested on 1.96).
 
 This is the point of the crate. Each test names the formal claim it grounds.
 
-### Known-answer tests (`tests/kat.rs`) — the primitives are the standard ones
+### Known-answer tests (`tests/kat.rs`): the primitives are the standard ones
 
 | Test | Pins to |
 |------|---------|
@@ -42,7 +42,7 @@ This is the point of the crate. Each test names the formal claim it grounds.
 | `bip39_trezor_vector` | BIP39 Trezor seed vector |
 | `mek_is_deterministic_from_mnemonic` | recovery goal G7 (deterministic root) |
 
-### Property tests (`tests/properties.rs`) — the envelope argument's obligations hold
+### Property tests (`tests/properties.rs`): the envelope argument's obligations hold
 
 These are the four obligations exported by [`../proofs/ENVELOPE_ARGUMENT.md`](../proofs/ENVELOPE_ARGUMENT.md) §6,
 plus the AEAD guarantees that argument assumes.
@@ -59,7 +59,7 @@ plus the AEAD guarantees that argument assumes.
 Obligation 3's *shape* (AES-KW, not GCM, for keys) is structural: `wrap_post_key` can only call
 AES-KW, and `envelope_roundtrip` asserts the 40-byte wrap length that AES-KW produces.
 
-### Attack / defense (`tests/attack.rs`) — the models, in code
+### Attack / defense (`tests/attack.rs`): the models, in code
 
 | Test | Mirrors |
 |------|---------|

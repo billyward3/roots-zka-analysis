@@ -1,4 +1,4 @@
-# Roots ZKA v2 — Strengthened Protocol (the "what I'd do now")
+# Roots ZKA v2: Strengthened Protocol (the "what I'd do now")
 
 > The strengthening half of reconstruct-then-strengthen. v1 (`PROTOCOL_V1.md`) was analysed and
 > found to have a sound cryptographic core but a broken key distribution: the member-add handoff
@@ -51,7 +51,7 @@ its identity signing key. The newcomer **verifies** that signature against the a
 admin to wrap, is likewise taken from the log (not from an unauthenticated channel).
 
 **Both halves are required.** Authenticating only the newcomer's key is insufficient: the injection
-path remains and re-pollutes extraction. This is not a hand-wave — it is a machine-checked negative
+path remains and re-pollutes extraction. This is not a hand-wave: it is a machine-checked negative
 result (`../model/v2_extraction.spthy`: with only the newcomer key authenticated,
 `handoff_key_secrecy` is still **falsified**). Authenticating the admin's handoff (so forged
 handoffs are rejected) is what closes it.
@@ -67,7 +67,7 @@ adversary.
 |---|---|---|
 | `handoff_key_secrecy` (extraction) | **falsified** | **verified** (all-traces, 9 steps) |
 | `no_key_injection` (injection) | reachable (verified attack) | **verified** secure (all-traces, 13 steps) |
-| partial fix only (`v2_extraction.spthy`) | — | **falsified** — proves both fixes are needed |
+| partial fix only (`v2_extraction.spthy`) | - | **falsified**, proves both fixes are needed |
 
 So the exact two attacks that broke v1 are machine-checked to be closed in v2, under no member
 compromise.

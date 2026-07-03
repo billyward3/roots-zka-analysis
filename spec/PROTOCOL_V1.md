@@ -1,4 +1,4 @@
-# Roots ZKA v1 — Reconstructed Protocol Specification
+# Roots ZKA v1: Reconstructed Protocol Specification
 
 > **Status:** reconstruction of the original design (v1). This is the faithful "as designed"
 > protocol that the formal analysis targets. Strengthening lives in a separate `PROTOCOL_V2.md`
@@ -19,7 +19,7 @@ designed for Roots: a system in which a server stores and routes ciphertext it c
 while a changing group of family members retain shared read access to content across the full
 history of the group.
 
-In scope: the cryptographic protocol and its access-control state machine — key hierarchy,
+In scope: the cryptographic protocol and its access-control state machine: key hierarchy,
 content encryption, member addition (including historical access), member removal (key
 rotation), profile-key distribution, and searchable encryption.
 
@@ -66,13 +66,13 @@ keys are of the standard length for their primitive.
 
 ## 3. Parties and identifiers
 
-- **User `U`** — a person with a device holding secret key material. Identified by `uid`.
-- **Member** — a user in the context of a specific family, with a `role ∈ {admin, member}`
+- **User `U`**: a person with a device holding secret key material. Identified by `uid`.
+- **Member**: a user in the context of a specific family, with a `role ∈ {admin, member}`
   and a `status ∈ {pending, claimed, approved_pending_keys, active, removed}`.
-- **Admin** — a member with `role = admin`; the only party permitted to approve joins,
+- **Admin**: a member with `role = admin`; the only party permitted to approve joins,
   distribute keys, and rotate epochs.
-- **Family `F`** — a group; the unit of shared access and (in the product) billing.
-- **Server `S`** — Firebase Cloud Functions + Firestore + Cloud Storage. Stores all state,
+- **Family `F`**: a group; the unit of shared access and (in the product) billing.
+- **Server `S`**: Firebase Cloud Functions + Firestore + Cloud Storage. Stores all state,
   routes all messages, enforces application-level authorization. **Never holds plaintext keys
   or content by design.**
 
@@ -143,7 +143,7 @@ displayName, email                 # plaintext (operational)
 salt_U                             # Argon2id salt
 wrappedMEK:         wrap(MEK_U, pwKey)        # password-unlock path; mnemonic is the recovery path
 wrappedIdentityKey: wrap(sk_U^dh, MEK_U)      # identity secret, syncs across devices via MEK_U
-pk_U^dh                            # published X25519 public key (UNVERIFIED in v1 — see G5, §11-F)
+pk_U^dh                            # published X25519 public key (UNVERIFIED in v1: see G5, §11-F)
 encryptedProfileData: {profile}_PDK
 profileKeyBundles: { "family:F": { wrappedPDK: wrap(PDK_U, epochKey[F][e]), epochId } }
 ```
@@ -204,7 +204,7 @@ reset rotates no key below `MEK_U`.
 
 ## 6. Content protocols
 
-### 6.1 P-CREATE — post creation (envelope encryption)
+### 6.1 P-CREATE: post creation (envelope encryption)
 
 Author `U` in family `F` at epoch `e`:
 
@@ -226,7 +226,7 @@ The server validates only *shape* (base64 well-formedness, ECDH key structure, m
 sizes) and *authorization* (is `U` an active member with `CREATE_POSTS`). It performs no
 cryptographic operation on the content.
 
-### 6.2 P-READ — decryption
+### 6.2 P-READ: decryption
 
 Reader `V` with access to context `c` (e.g. `family:F` at epoch `e`):
 
@@ -240,7 +240,7 @@ Reader `V` with access to context `c` (e.g. `family:F` at epoch `e`):
 `V` can read iff `V` can unwrap at least one entry of `encryptedKeyBundles`. This is the
 cryptographic access-control statement (claim G2, §8).
 
-### 6.3 P-SEARCH — blind-index query
+### 6.3 P-SEARCH: blind-index query
 
 ```
 Query for term t in context c:  tag := MAC(t, indexKey_c);  S runs array-contains(tag).
@@ -252,29 +252,29 @@ The server matches opaque tags, never the term. Accepted leakage in §10.
 
 ## 7. Membership protocols
 
-### 7.1 P-ADD — adding a member (the central flow)
+### 7.1 P-ADD: adding a member (the central flow)
 
 Combines an admin-approved onboarding handshake with **historical key distribution**, the
 mechanism that grants a newcomer access to content created before they joined.
 
 ```
-Phase 1 — claim
+Phase 1: claim
   invitee W → S: claim(invitationId, pk_W^dh)         # publishes W's X25519 public key
   S: invitation.status := claimed; record inviteeId=W, pk_W^dh
 
-Phase 2 — approve
+Phase 2: approve
   admin A → S: approve(invitationId)
   S: members[W] := { role: member, status: approved_pending_keys,
                      pendingExpiresAt: now + 7 days }
 
-Phase 3 — key handoff + historical distribution (client-driven, server is a dumb writer)
+Phase 3: key handoff + historical distribution (client-driven, server is a dumb writer)
   A: fetch pk_W^dh from S
   A: ss := KDF(DH(sk_A^dh, pk_W^dh))                  # ECDH shared secret  [INFERRED §11-B]
   A: for each epoch e in 1..e*:  hk[e] := wrap(epochKey[F][e], ss)
   A: (optionally) profileBundle := wrap(PDK exchange material, ss)
   A → S (postHistoricalKeys): { familyId:F, newMemberId:W, keyBundles: hk }
 
-Phase 4 — activate (atomic)
+Phase 4: activate (atomic)
   S: assert A has DISTRIBUTE_KEYS; assert members[W].status == approved_pending_keys
      assert not expired; assert keys not already distributed
   S: write hk[e] to historicalKeys subcollection for W
@@ -288,7 +288,7 @@ Post-conditions: `W` can derive `ss`, unwrap every `hk[e]`, and thereby read all
 authenticates that public key out of band (no safety numbers, no key-transparency log). This
 is the focus of claim G5 (§8) and the predicted v1 attack.
 
-### 7.2 P-REMOVE — removing a member (epoch rotation)
+### 7.2 P-REMOVE: removing a member (epoch rotation)
 
 Removing `R` from `F` requires a full key rotation, because `R` still holds `epochKey[F][e*]`.
 
@@ -308,7 +308,7 @@ not. Also, `R` retains the ability to decrypt content from epochs ≤ `e*` that 
 held. v1 provides *revocation of future content*, not retroactive secrecy of past content.
 This is exactly what claims G3 and G4 (§8) pin down.
 
-### 7.3 P-PROFILE — profile data key distribution
+### 7.3 P-PROFILE: profile data key distribution
 
 ```
 On join (extends P-ADD phase 3):
@@ -334,28 +334,28 @@ Each claim is phrased to become either a Tamarin lemma (symbolic) or a game-base
 (computational). "The adversary" is the §9 adversary. `learns(X)` means the adversary can
 compute `X`.
 
-- **G1 — Content confidentiality.** For any post `P` with `encryptedKeyBundles` over context
+- **G1: Content confidentiality.** For any post `P` with `encryptedKeyBundles` over context
   set `C`, if the adversary corrupts no party able to unwrap any `c ∈ C` (transitively, up the
   hierarchy), then it does not learn `P`'s metadata or any media variant. *Computational:
   reduces to AEAD + key-wrap security; Symbolic: secrecy lemma.*
-- **G2 — Access-control soundness.** A party can decrypt `P` iff it can unwrap some entry of
+- **G2: Access-control soundness.** A party can decrypt `P` iff it can unwrap some entry of
   `encryptedKeyBundles[P]`. No `accessControl` list membership grants plaintext without the
   corresponding key. *Symbolic.*
-- **G3 — Revocation correctness (future content).** After `R` is removed and epoch advances to
+- **G3: Revocation correctness (future content).** After `R` is removed and epoch advances to
   `e+1`, `R` cannot decrypt any post created at epoch ≥ `e+1`, even given all of `R`'s prior
   state. *Symbolic, over the rotation state machine.*
-- **G4 — Bounded forward secrecy (explicit non-claim).** Compromise of `epochKey[F][e]` reveals
+- **G4: Bounded forward secrecy (explicit non-claim).** Compromise of `epochKey[F][e]` reveals
   exactly the content of epoch `e` (and, via historical distribution, content of any epoch the
   compromised member legitimately held). It does **not** reveal content of epochs the member
   never held. v1 makes no per-post or per-time forward-secrecy claim beyond epoch granularity.
   *Stated as a precise boundary, not a guarantee to maximize.*
-- **G5 — Handoff authentication.** In P-ADD, the key material `W` ends up holding is the genuine
+- **G5: Handoff authentication.** In P-ADD, the key material `W` ends up holding is the genuine
   `epochKey[F][·]` produced by an honest admin, not a value chosen or relayed by a corrupted
   server. *Symbolic. This is the claim v1 is expected to FAIL (server-as-PKI MITM).*
-- **G6 — Server zero-knowledge.** An honest-but-curious server that follows the protocol learns
+- **G6: Server zero-knowledge.** An honest-but-curious server that follows the protocol learns
   nothing about plaintext content beyond the declared leakage of §10. *Symbolic secrecy of all
   content terms against a server-role adversary; informs the computational statement.*
-- **G7 — Recovery soundness.** A user holding only the BIP39 mnemonic can regenerate `MEK_U`
+- **G7: Recovery soundness.** A user holding only the BIP39 mnemonic can regenerate `MEK_U`
   and recover access to all contexts whose keys are wrapped (transitively) under `MEK_U`, and an
   adversary without the mnemonic gains nothing from its existence. *Computational/symbolic.*
 
@@ -366,15 +366,15 @@ compute `X`.
 The network is fully adversary-controlled (inject, drop, reorder, read). On top of standard
 Dolev-Yao, the model includes targeted corruptions, each exposing exactly that party's secrets:
 
-- **Honest-but-curious server (`S-HBC`)** — follows the protocol but reads all stored state and
+- **Honest-but-curious server (`S-HBC`)**: follows the protocol but reads all stored state and
   all messages. Primary adversary; the system's whole premise is to defeat it. Targets G1, G6.
-- **Malicious server (`S-MAL`)** — additionally deviates: may substitute stored values, reorder
+- **Malicious server (`S-MAL`)**: additionally deviates: may substitute stored values, reorder
   writes, and (crucially) serve chosen public keys. Targets G5.
-- **Removed member (`M-REM`)** — a once-honest member who retains all state held up to removal.
+- **Removed member (`M-REM`)**: a once-honest member who retains all state held up to removal.
   Targets G3, G4.
-- **Compromised member device (`M-CMP`)** — exposes one member's current keys. Bounds blast
+- **Compromised member device (`M-CMP`)**: exposes one member's current keys. Bounds blast
   radius; targets G1/G4 boundaries.
-- **Compromised admin (`A-CMP`)** — exposes an admin's keys; since admins re-wrap plaintext
+- **Compromised admin (`A-CMP`)**: exposes an admin's keys; since admins re-wrap plaintext
   epoch keys for everyone, this is the worst single-party compromise. Used to quantify the
   trusted-admin assumption (a v1 weakness to be addressed in v2).
 
@@ -416,7 +416,7 @@ recall the intended choice on these; resolving them is part of the analysis.)
   uid_sender ‖ uid_receiver)`. Raw `DH` output is never used as a key, and binding both identities
   into the label prevents unknown-key-share confusion. *v2:* unchanged in principle; combined with
   the ephemeral-key change in (D).
-- **C. Mnemonic vs password root.** *Decision:* resolved in §5.1 — the mnemonic seed is the root,
+- **C. Mnemonic vs password root.** *Decision:* resolved in §5.1: the mnemonic seed is the root,
   the password unlocks a wrapped copy. Rejects the impossible "MEK = Argon2id(password) AND
   recoverable from a separate mnemonic" literal reading.
 - **D. Identity-key scheme.** *Decision:* one long-term X25519 identity keypair per user; secret
@@ -428,7 +428,7 @@ recall the intended choice on these; resolving them is part of the analysis.)
 - **E. Family indexing key.** *Decision:* a per-family `indexKey[F]`, distributed alongside the
   epoch-key bundle and rotated on member removal (P-REMOVE step 4), distinct from each
   `folderIndexKey[φ]`. Without rotation, a removed member could still run blind-index queries.
-- **F. Public-key authenticity.** *Decision:* **none** in v1, faithful to the originals — public
+- **F. Public-key authenticity.** *Decision:* **none** in v1, faithful to the originals: public
   keys are submitted to and served by the server with no out-of-band check. This is deliberate, so
   that G5 tests the real design rather than a charitable one. *v2:* a key-transparency log
   (append-only, auditable) and/or safety-number verification; this is the primary v2 fix.
