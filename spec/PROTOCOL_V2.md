@@ -1,6 +1,6 @@
 # Roots ZKA v2: the Heirloom handoff (strengthened protocol)
 
-> The strengthening half of reconstruct-then-strengthen. v1 (`PROTOCOL_V1.md`) was analysed and
+> The strengthened design. v1 (`PROTOCOL_V1.md`) was analysed and
 > found to have a sound cryptographic core but a broken key distribution: the member-add handoff
 > trusts public keys the server delivers without verification, which a malicious server exploits
 > two ways (`../analysis/RESULTS.md`, Result 2). v2 keeps everything that was proved sound and
@@ -11,7 +11,7 @@
 > family's key history rather than trust the server to deliver it. Naming applies to this mechanism
 > only; the surrounding envelope (DEK/KEK, AES-KW, AES-GCM) is standard and unnamed.
 >
-> Every change here is motivated by a specific v1 finding, and the headline ones are machine-checked
+> Every change here is motivated by a specific v1 finding, and the main ones are machine-checked
 > (`../model/v2.spthy`).
 
 ---
@@ -42,11 +42,12 @@ it in the log (where the victim's own client detects a key it never published) o
 view (which consistency-proof gossip detects). This converts "the server is an unauthenticated
 PKI" into "the server is a transparent PKI that cannot equivocate undetectably."
 
-### 2.2 Out-of-band safety numbers (the human check)
+### 2.2 Out-of-band safety numbers
 
 For the high-value step of forming a connection, the two parties may compare a **safety number**
-(a hash of both identity keys) over an out-of-band channel (in person, phone), Signal-style. This
-is the belt-and-suspenders check that does not depend on the log infrastructure being audited.
+(a hash of both identity keys) over an out-of-band channel such as in person or by phone,
+Signal-style. This is an additional check that does not depend on the log infrastructure being
+audited.
 
 ### 2.3 Signed, verified handoff
 
@@ -56,10 +57,10 @@ its identity signing key. The newcomer **verifies** that signature against the a
 admin to wrap, is likewise taken from the log (not from an unauthenticated channel).
 
 **Both halves are required.** Authenticating only the newcomer's key is insufficient: the injection
-path remains and re-pollutes extraction. This is not a hand-wave: it is a machine-checked negative
-result (`../model/v2_extraction.spthy`: with only the newcomer key authenticated,
-`handoff_key_secrecy` is still **falsified**). Authenticating the admin's handoff (so forged
-handoffs are rejected) is what closes it.
+path remains and re-pollutes extraction. This is a machine-checked negative result
+(`../model/v2_extraction.spthy`: with only the newcomer key authenticated, `handoff_key_secrecy` is
+still **falsified**). Authenticating the admin's handoff, so that forged handoffs are rejected, is
+what closes it.
 
 ## 3. What is proved (`../model/v2.spthy`)
 
@@ -79,8 +80,7 @@ compromise.
 
 ## 4. Further improvements (designed; deeper modelling is future work)
 
-These came out of the v1 analysis but are not the headline break; recorded as the rest of the
-"what I'd do now."
+These come out of the v1 analysis but are not the main break.
 
 - **Forward-secret handoff (v1 §11-D).** v1 uses long-term identity keys on both sides of the
   handoff, so the handoff channel has no forward secrecy. v2 adds X3DH-style **ephemeral prekeys**:
@@ -96,8 +96,8 @@ These came out of the v1 analysis but are not the headline break; recorded as th
   design, lets new members inherit history (the retention requirement). v2 keeps that product
   property but makes the boundary explicit and auditable, rather than implicit.
 
-## 5. What v2 deliberately does NOT change
+## 5. What v2 keeps unchanged
 
 The cryptographic core that v1 analysis proved sound is retained verbatim: the per-post DEK / epoch-
 KEK envelope (G1/G6), epoch rotation and revocation (G3/G4), and the mnemonic-root recovery keystore
-(G7). v2 is a key-distribution fix, not a redesign.
+(G7). v2 changes only key distribution.

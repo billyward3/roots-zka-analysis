@@ -1,52 +1,45 @@
 # Roots ZKA: a formal security analysis
 
-Reconstructing the zero-knowledge encryption architecture designed for **Roots** (a lifetime family
-photo-sharing app), stating its security goals as formal claims, and either proving them or breaking
-them. Where the original design (**v1**) fails a claim, a strengthened design (**v2**) is proposed
-and re-verified.
+Roots is a family photo-sharing app built around a permanent shared archive. Its encryption layer, a
+zero-knowledge architecture (ZKA), was designed and partially built, then shelved for market reasons
+before the primitives were implemented for real. This repository reconstructs that design and checks
+it against formal security goals. Most of the goals hold. One does not: the member-onboarding handoff
+falls to a key-substitution attack, which a revised handoff repairs. The repository does not ship the
+encryption layer; it records what the design guaranteed and where it failed.
 
-The encryption layer was fully designed and partially built, then deferred for market reasons before
-the primitives were implemented for real. This repository does not ship it. It asks a narrower and
-more interesting question: what did the design actually guarantee, where did it fail, and what does a
-version that survives formal analysis look like?
+## Summary
 
-## The headline
+The analysis found a key-substitution attack against the server, which the design named as its
+primary adversary. The original documents state that the server cannot impersonate users, yet every
+public key is submitted to and served by that same server with no out-of-band verification. Tamarin
+turns that gap into a concrete trace: during member onboarding a malicious server substitutes its own
+key, the admin wraps the family epoch key under it, and the server recovers the key and reads all
+family content. No member is compromised in the attack.
 
-The analysis found a real key-substitution attack against the exact adversary the design named as
-its primary threat: the server.
+The encryption construction underneath is sound, shown both by a Tamarin proof and a game-based
+reduction. The failure is in key distribution. A revised handoff, named Heirloom, adds a
+key-transparency log and authenticated delivery, and Tamarin verifies that it closes both the
+extraction and injection variants. A version that authenticates only the newcomer's key still falls,
+so both parts of the fix are necessary. Heirloom is the only mechanism this project names; the
+surrounding envelope is a standard construction.
 
-- The original documents claim "the server cannot impersonate users," while routing every public key
-  through that same server with no out-of-band verification.
-- Formal analysis turns that latent contradiction into a concrete trace. A malicious server
-  substitutes its own key during member onboarding, the honest admin wraps the family key to the
-  attacker, and all family content falls. No member is ever compromised.
-- The underlying encryption construction is sound, verified two independent ways. The break is
-  entirely in key distribution, not in the envelope.
-- A strengthened v2 handoff, **Heirloom** (key-transparency log plus authenticated delivery), closes
-  both the extraction and injection variants, machine-verified. A partial fix is proven insufficient,
-  so the two-part fix is justified rather than asserted. Heirloom is the one mechanism this project
-  names: an authenticated, transparency-anchored way for a new member to *inherit* the family's key
-  history. The envelope around it is standard.
+Every claim here is machine-checked: Tamarin for the protocol, a game-based reduction for the
+encryption core, and a Rust reference implementation whose tests reproduce the attack and the fix.
 
-Every claim above is machine-checked: Tamarin for the protocol, a game-based reduction for the
-encryption core, and a Rust reference implementation whose tests reproduce both the attack and its
-fix.
+![The v1 handoff attack, in which a malicious server substitutes a key and recovers the family epoch key, beside the v2 fix, in which a transparency log and signed handoff defeat the same adversary.](assets/handoff_v1_v2.png)
 
-![The v1 handoff attack (a malicious server substitutes a key and recovers the family epoch key) beside the v2 fix (a transparency log plus signed handoff defeats the same adversary).](assets/handoff_v1_v2.png)
+## Forward secrecy, inverted
 
-## The idea worth remembering
+Messaging protocols like Signal are designed for forward secrecy: someone who joins a conversation
+should not be able to read messages sent before they arrived, and keys are discarded once they are no
+longer needed. Roots has the opposite requirement. It gives family members a permanent archive, so a
+member who joins in 2030 is expected to read photos shared in 2024. Its key distribution therefore
+has to hand new members the keys to content that predates them. Much of this analysis concerns what
+that requirement costs and whether the original design met it securely.
 
-Most end-to-end-encrypted systems are messaging systems, and messaging crypto is built around
-**forward secrecy**: a new participant must not read old messages, and old keys are deleted as fast
-as possible. Roots is the inverse. Its product promise is **lifetime retention**, so a family member
-who joins in 2030 is supposed to inherit the entire history back to 2024. The protocol therefore
-contains a mechanism, historical key distribution, whose whole job is to undo what forward secrecy
-would otherwise enforce. Reasoning precisely about a system that deliberately inverts the central
-guarantee of the protocols it borrows from is the intellectual core of this work.
+## Results
 
-## Results at a glance
-
-Full table, traces, and reproduction commands in [`analysis/RESULTS.md`](analysis/RESULTS.md).
+The full table, traces, and reproduction commands are in [`analysis/RESULTS.md`](analysis/RESULTS.md).
 
 | Claim | Where | Verdict |
 |---|---|---|
@@ -60,22 +53,22 @@ Full table, traces, and reproduction commands in [`analysis/RESULTS.md`](analysi
 | v2 no key injection | `v2.spthy` | verified (the fix) |
 | v2 partial fix (newcomer key only) | `v2_extraction.spthy` | falsified (both fixes needed) |
 
-## Run it yourself
+## Reproducing
 
-The fastest way to see the result is the reference implementation, where the v1 attack and the v2
-defense are ordinary tests.
+The quickest check is the reference implementation, where the v1 attack and the v2 defense are
+ordinary tests.
 
 ```
 cd impl
 cargo test          # 14 tests: standard KAT vectors, envelope obligations, v1 attack, v2 fix
 ```
 
-`tests/attack.rs::v1_malicious_server_recovers_epoch_key` asserts the attack **succeeds** (the
-malicious server recovers the family key); the v2 tests show the same adversary defeated. See
-[`impl/README.md`](impl/README.md) for the test-to-proof map. Requires a recent stable Rust
-(edition 2024 dependencies; tested on 1.96).
+The test `v1_malicious_server_recovers_epoch_key` asserts that the attack succeeds, meaning the
+malicious server recovers the family key; the v2 tests show the same adversary failing.
+[`impl/README.md`](impl/README.md) maps each test to the claim it checks. The code needs a recent
+stable Rust (edition 2024 dependencies; tested on 1.96).
 
-To re-check the proofs (requires `tamarin-prover` 1.12+):
+Re-checking the proofs needs `tamarin-prover` 1.12 or later:
 
 ```
 tamarin-prover --prove model/v1_core.spthy                  # envelope confidentiality
@@ -87,7 +80,7 @@ tamarin-prover --prove model/v2.spthy                       # the fix (verified)
 
 ## Method
 
-Layered, because no single tool covers all of it honestly.
+The analysis works in three layers.
 
 | Layer | Tool | What it establishes |
 |---|---|---|
@@ -106,28 +99,25 @@ analysis/  threat model, full results, attack traces, v2 rationale
 assets/    diagrams of the key hierarchy and the handoff attack/fix
 ```
 
-## Scope and honesty
+## Scope and limitations
 
-**This is a security-analysis artifact, not audited cryptographic software.** The reconstructed v1
-is a broken design, kept broken on purpose. The v2 Heirloom design has not been independently
-audited, and the reference code is written for clarity, not deployment. Do not use any of it in
-production.
+**This is a security-analysis artifact, not audited cryptographic software.** The reconstructed v1 is
+a broken design, and it is left broken. The v2 Heirloom design has not been independently audited, and
+the reference code is written for clarity rather than deployment. Do not use any of it in production.
 
-It is written to be honest about its own limits.
+- The symbolic model assumes perfect cryptography (the Dolev-Yao model). It establishes that the
+  protocol logic admits no key-substitution trace; computational security of the encryption core is
+  covered separately by the game-based argument.
+- The handoff's ECDH-then-wrap is modelled as public-key encryption to the newcomer's key. This is a
+  standard abstraction of the same trust relation and captures the unauthenticated-key attack. A model
+  using the full Diffie-Hellman equational theory establishes the same property but does not terminate
+  under the automatic prover without a custom oracle, which is left as future work.
+  [`analysis/RESULTS.md`](analysis/RESULTS.md) has the details.
+- In the original system the primitives were mocked on the client, and only the backend orchestration
+  and data model were built and tested. The original documents describe "forward secrecy" and an
+  "MLS-style tree" that the implemented design, a flat per-member epoch-key wrapping, did not provide.
+  This repository analyzes the design as reconstructed and marks where the reconstruction resolves an
+  ambiguity ([`spec/PROTOCOL_V1.md`](spec/PROTOCOL_V1.md) §11).
 
-- The symbolic model is Dolev-Yao (perfect cryptography). It proves the protocol logic has no
-  key-substitution trace; the separate game-based argument covers computational security of the
-  encryption core.
-- The handoff's ECDH-then-wrap is modelled as public-key encryption to the newcomer's key, a
-  standard abstraction of the same trust relation that faithfully captures the unauthenticated-key
-  attack. A full Diffie-Hellman-algebra model proves the same property but needs a custom proof
-  oracle to terminate, which is noted as future work rather than a gap in the conclusion. Details in
-  [`analysis/RESULTS.md`](analysis/RESULTS.md).
-- In the original system the primitives were mocked on the client; only backend orchestration and
-  the data model were built and tested. Claims in the original documents about "forward secrecy" and
-  an "MLS-style tree" were aspirational relative to the flat per-member epoch-key wrapping that was
-  actually designed. This repository analyzes the design as reconstructed, and flags where the
-  reconstruction resolves an ambiguity ([`spec/PROTOCOL_V1.md`](spec/PROTOCOL_V1.md) §11).
-
-Reconstructed from the original design documents (now archived). Contains no application code and no
+Reconstructed from the original design documents, now archived. Contains no application code and no
 secrets.

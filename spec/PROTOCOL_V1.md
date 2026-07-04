@@ -1,4 +1,4 @@
-# Roots ZKA v1: Reconstructed Protocol Specification
+# Roots ZKA v1: reconstructed protocol specification
 
 > **Status:** reconstruction of the original design (v1). This is the faithful "as designed"
 > protocol that the formal analysis targets. Strengthening lives in a separate `PROTOCOL_V2.md`
@@ -6,9 +6,8 @@
 >
 > **Reconstruction discipline.** Statements drawn directly from the original design documents
 > are unmarked. Statements that fill a gap the originals left underspecified are marked
-> **[INFERRED]** and collected in §11 so the modeling never silently assumes more than the
-> design stated. The point of a formal spec is to make every such choice explicit, because a
-> proof is only as honest as its assumptions.
+> **[INFERRED]** and collected in §11, so the modeling never silently assumes more than the
+> design stated.
 
 ---
 

@@ -1,7 +1,7 @@
 //! # roots-zka: reference implementation
 //!
-//! A small, runnable implementation of the Roots zero-knowledge-architecture primitives. Its job is
-//! not to re-create the app but to close the loop between the formal analysis and real code:
+//! A small, runnable implementation of the Roots zero-knowledge-architecture primitives. It
+//! connects the formal analysis to running code:
 //!
 //! * every primitive matches a decision in `spec/PROTOCOL_V1.md` §11;
 //! * `tests/kat.rs` pins the primitives to published standard vectors (RFC 3394, RFC 7748, BIP39);

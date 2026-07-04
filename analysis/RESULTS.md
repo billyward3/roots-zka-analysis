@@ -2,8 +2,8 @@
 
 Machine-checked findings for the reconstructed Roots ZKA v1 protocol (`../spec/PROTOCOL_V1.md`).
 Symbolic results are from Tamarin 1.12.0; the computational result is the game-based argument in
-`../proofs/ENVELOPE_ARGUMENT.md`. Every lemma below has a definitive verdict; lemmas that need a
-proof oracle to terminate are called out as such rather than left ambiguous.
+`../proofs/ENVELOPE_ARGUMENT.md`. Every lemma below has a definitive verdict, and the lemmas that
+need a proof oracle to terminate are marked as such.
 
 Reproduce:
 
@@ -41,10 +41,10 @@ In a closed family (members already hold the epoch key; no onboarding), content 
 genuine epoch key is secret against a Dolev-Yao adversary unless a holder of that epoch is
 compromised. Tamarin proves `post_secrecy_closed` as an **all-traces** lemma, oracle-free.
 
-This is the symbolic counterpart to the computational `ENVELOPE_ARGUMENT.md`, which reduces the
-same statement to AEAD + AES-KW security with a linear-in-`q` bound. Two independent methods,
-same conclusion: **the DEK/KEK envelope construction is sound.** The problem is not the
-construction.
+This is the symbolic counterpart to the computational argument in `ENVELOPE_ARGUMENT.md`, which
+reduces the same statement to AEAD and AES-KW security with a linear-in-`q` bound. Both methods
+reach the same conclusion: the DEK/KEK envelope construction is sound. Result 2 locates the failure
+in key distribution instead.
 
 ## Result 2 (the break): the v1 handoff has no public-key authentication
 
@@ -127,29 +127,27 @@ concrete, verified justification for the two-part fix rather than an assertion.
 
 ## Interpretation
 
-The two layers compose to one honest verdict: **the cryptographic construction is sound; the key
-distribution is not.** v1's zero-knowledge claim names the server as the primary adversary, yet the
-server is also the unauthenticated PKI, and that is exactly where confidentiality fails. This is
-the central finding the v2 redesign must fix (key transparency and/or out-of-band verification;
-`spec §11-F`).
+The two layers give one verdict: the cryptographic construction is sound, and the key distribution
+around it is not. v1 names the server as its primary adversary, yet the server is also the
+unauthenticated PKI, and that is where confidentiality fails. This is the finding the v2 redesign
+addresses, through key transparency and out-of-band verification (`spec §11-F`).
 
-It is worth stating plainly that this is a realistic class of bug, not a contrived one: the
-original design documents assert "the server cannot impersonate users" while routing all public
-keys through that same server with no verification. Formal analysis is what turns that latent
-contradiction into a concrete trace.
+This is a realistic class of bug. The original design documents assert that the server cannot
+impersonate users while routing every public key through that same server with no verification.
+Formal analysis turns that contradiction into a concrete trace.
 
-## Honest limitations of the symbolic model
+## Limitations of the symbolic model
 
 - **DH abstraction.** The handoff's ECDH-then-wrap is modelled as public-key encryption to the
   newcomer's key (`aenc`), a standard abstraction of the same trust relation (`v1.spthy` header,
-  `spec §11-B/§11-F`). It faithfully captures the unauthenticated-public-key attack. A full
-  `diffie-hellman`-builtin model establishes the same property but the autoprover does not
-  terminate on it without a custom proof oracle; that oracle is **future work**, not a gap in the
-  conclusion (the aenc model already proves the break, and the DH version's only added fidelity is
-  the ECDH algebra, which does not change the attack).
+  `spec §11-B/§11-F`). It captures the unauthenticated-public-key attack. A full
+  `diffie-hellman`-builtin model establishes the same property, but the autoprover does not
+  terminate on it without a custom proof oracle, which is left as future work. The `aenc` model
+  already establishes the break, and the full DH version would add only the ECDH algebra, which
+  does not change the attack.
 - **All-traces positive secrecy in the full model** (with the handoff rules present) likewise needs
-  an oracle to terminate; the closed-family `v1_core.spthy` proof covers the positive statement
-  cleanly, so this is a termination limitation, not an unknown.
+  an oracle to terminate. The closed-family `v1_core.spthy` proof covers the positive statement, so
+  this is a limitation of termination rather than an open question.
 - **Scope now covered:** G1/G6 (envelope), G3/G4 (rotation), G5 (handoff break), G7 (recovery).
   G2 (access-control soundness) is implied by the secrecy lemmas (decryption requires the wrapped
   key). **Not yet modelled:** profile-key distribution as a distinct flow, and multi-family

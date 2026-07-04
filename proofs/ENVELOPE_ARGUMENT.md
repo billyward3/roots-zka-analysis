@@ -5,8 +5,8 @@
 > Dolev-Yao abstraction, treating encryption as a perfect black box. This document does the
 > complementary thing: it argues, in the computational model, that the **envelope construction
 > itself** (post key as DEK, epoch key as KEK) achieves content confidentiality assuming only
-> standard security of its primitives. Together they cover both "is the protocol logic right"
-> and "is the cryptographic core sound."
+> standard security of its primitives. Together the two layers cover the protocol logic and the
+> cryptographic core.
 >
 > **Status:** proof sketch with explicit game hops, scoped to the closed-family case (claim G1
 > with no member onboarding). The handoff hole is out of scope here by design; it is the
@@ -29,7 +29,7 @@ against a passive server, **G6**).
 ## 2. Primitives and assumptions
 
 - **DEM:** AES-256-GCM, modelled as an `AEAD` scheme `(Enc, Dec)`. Assumption: **IND-CPA** for
-  the headline result; **IND-CCA / authenticated-encryption (AE)** when we also want integrity
+  the main result; **IND-CCA / authenticated-encryption (AE)** when we also want integrity
   (tamper-evidence of media). GCM with unique random 96-bit IVs per key meets AE under the
   standard PRF/CTR assumptions; we take AE as given.
 - **Key wrap (KEM-analogue):** AES-KW, modelled as a deterministic AE scheme `(Wrap, Unwrap)`
@@ -43,7 +43,7 @@ against a passive server, **G6**).
 IV discipline matters and is assumed: GCM is catastrophically broken under IV reuse with the
 same key. Because `postKey` is per-post and each variant gets a fresh random IV (spec §4.3, §6.1),
 the "(key, IV) never repeats" precondition holds. This is recorded as a proof obligation on the
-implementation (`../impl`), not merely an assumption.
+implementation (`../impl`) and checked there.
 
 ## 3. Security game
 
@@ -104,8 +104,8 @@ This is the computational backbone of G1/G6 for the closed-family case.
 - **The handoff.** Nothing here authenticates how a newcomer obtains `epochKey`. The symbolic
   model shows v1's handoff fails to keep `epochKey` secret against an active server. That breaks
   the precondition of this theorem (epoch key uncompromised) the moment a member is onboarded.
-  The two layers compose to the honest overall verdict: *the construction is sound; the key
-  distribution is not.*
+  The two layers compose to the overall verdict: the construction is sound, and the key
+  distribution is not.
 - **Forward secrecy / revocation.** Out of scope here; G3/G4 are epoch-state-machine properties
   handled symbolically.
 - **Metadata.** Confidentiality is of `m`, not of the declared leakage in spec §10.

@@ -1,6 +1,6 @@
 //! Historical key handoff: how a newly added member receives the family epoch key so they can read
-//! pre-join content (P-ADD, spec §7.1). This is the inversion of Signal: lifetime retention *needs*
-//! newcomers to inherit history, so there is no forward secrecy to hide behind here.
+//! pre-join content (P-ADD, spec §7.1). This is where Roots inverts forward secrecy: lifetime
+//! retention requires newcomers to inherit history, so the handoff hands over old keys on purpose.
 //!
 //! This module implements both designs so `tests/attack.rs` can run them side by side:
 //!
