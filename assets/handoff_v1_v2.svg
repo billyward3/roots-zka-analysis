@@ -14,8 +14,8 @@
   <rect width="1480" height="806" fill="#0f172a"/>
 
   <!-- title block -->
-  <text x="740" y="52" text-anchor="middle" fill="#f1f5f9" font-size="30" font-weight="700">The historical key handoff: where lifetime retention meets its adversary</text>
-  <text x="740" y="84" text-anchor="middle" fill="#94a3b8" font-size="16">A new family member must inherit the epoch key to read past content. In both panels the adversary is the server, and no member is ever compromised.</text>
+  <text x="740" y="52" text-anchor="middle" fill="#f1f5f9" font-size="27" font-weight="700">The historical key handoff: where lifetime retention meets its adversary</text>
+  <text x="740" y="84" text-anchor="middle" fill="#94a3b8" font-size="15">A new family member must inherit the epoch key to read past content. In both panels the adversary is the server, and no member is ever compromised.</text>
 
   <!-- divider -->
   <line x1="740" y1="120" x2="740" y2="792" stroke="#1e293b" stroke-width="2"/>

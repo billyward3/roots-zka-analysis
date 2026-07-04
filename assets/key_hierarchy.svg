@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="682" viewBox="0 0 1180 682" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect width="1180" height="682" fill="#0f172a"/>
+
+  <text x="590" y="46" text-anchor="middle" fill="#f1f5f9" font-size="27" font-weight="700">Key hierarchy and envelope encryption</text>
+  <text x="590" y="76" text-anchor="middle" fill="#94a3b8" font-size="15">One fresh key per post, wrapped under a per-family key that rotates when members leave.</text>
+
+  <!-- scope column (left) -->
+  <g fill="#64748b" font-size="12.5" text-anchor="middle">
+    <text x="150" y="157">root</text>
+    <text x="150" y="307">per family</text>
+    <text x="150" y="457">per post</text>
+    <text x="150" y="607">per item</text>
+  </g>
+
+  <!-- spine arrows -->
+  <g stroke="#64748b" stroke-width="2">
+    <line x1="590" y1="186" x2="590" y2="268" marker-end="url(#arr)"/>
+    <line x1="590" y1="336" x2="590" y2="418" marker-end="url(#arr)"/>
+    <line x1="590" y1="486" x2="590" y2="568" marker-end="url(#arr)"/>
+  </g>
+  <g fill="#cbd5e1" font-size="12.5">
+    <text x="606" y="232">guards the wrapped copy</text>
+    <text x="606" y="382">wraps  &#183;  AES-KW</text>
+    <text x="606" y="532">seals  &#183;  AES-256-GCM</text>
+  </g>
+
+  <!-- tier panels -->
+  <!-- MEK -->
+  <rect x="440" y="120" width="300" height="66" rx="10" fill="#16233d" stroke="#60a5fa" stroke-width="1.6"/>
+  <text x="590" y="147" text-anchor="middle" fill="#60a5fa" font-size="16" font-weight="700" font-family="monospace">MEK</text>
+  <text x="590" y="168" text-anchor="middle" fill="#cbd5e1" font-size="12.5">master key</text>
+  <!-- Epoch -->
+  <rect x="440" y="270" width="300" height="66" rx="10" fill="#16233d" stroke="#2dd4bf" stroke-width="1.6"/>
+  <text x="590" y="297" text-anchor="middle" fill="#2dd4bf" font-size="16" font-weight="700" font-family="monospace">epochKey[F]</text>
+  <text x="590" y="318" text-anchor="middle" fill="#cbd5e1" font-size="12.5">family key  &#183;  KEK</text>
+  <!-- Post -->
+  <rect x="440" y="420" width="300" height="66" rx="10" fill="#16233d" stroke="#fbbf24" stroke-width="1.6"/>
+  <text x="590" y="447" text-anchor="middle" fill="#fbbf24" font-size="16" font-weight="700" font-family="monospace">postKey</text>
+  <text x="590" y="468" text-anchor="middle" fill="#cbd5e1" font-size="12.5">post key  &#183;  DEK</text>
+  <!-- Content -->
+  <rect x="440" y="570" width="300" height="66" rx="10" fill="#16233d" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="590" y="597" text-anchor="middle" fill="#e2e8f0" font-size="16" font-weight="700" font-family="monospace">content</text>
+  <text x="590" y="618" text-anchor="middle" fill="#cbd5e1" font-size="12.5">photos, metadata</text>
+
+  <!-- right annotations -->
+  <g fill="#94a3b8" font-size="13">
+    <text x="772" y="142">Master key and root of the hierarchy.</text>
+    <text x="772" y="161">Recovered from a 24-word BIP39 mnemonic;</text>
+    <text x="772" y="180">a password unlocks a stored copy.</text>
+
+    <text x="772" y="292">Shared by the whole family. Rotated when a</text>
+    <text x="772" y="311">member is removed, and handed to new</text>
+    <text x="772" y="330">members through the Heirloom handoff.</text>
+
+    <text x="772" y="456">A fresh key for every single post, so no two</text>
+    <text x="772" y="475">posts share key material.</text>
+
+    <text x="772" y="606">Opaque ciphertext to the server, which</text>
+    <text x="772" y="625">stores and routes it but cannot read it.</text>
+  </g>
+</svg>

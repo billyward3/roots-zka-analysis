@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1180" height="620" fill="#0f172a"/>
+
+  <text x="590" y="46" text-anchor="middle" fill="#f1f5f9" font-size="27" font-weight="700">Four layers of evidence</text>
+  <text x="590" y="76" text-anchor="middle" fill="#94a3b8" font-size="15">Each layer checks what the others cannot, and they agree.</text>
+
+  <!-- connector rail -->
+  <line x1="118" y1="164" x2="118" y2="488" stroke="#233350" stroke-width="2"/>
+
+  <!-- panel 1: spec -->
+  <rect x="80" y="118" width="1020" height="92" rx="12" fill="#0d1a30" stroke="#1e293b" stroke-width="1.4"/>
+  <circle cx="118" cy="164" r="16" fill="#16233d" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="118" y="169" text-anchor="middle" fill="#94a3b8" font-size="15" font-weight="700">1</text>
+  <text x="152" y="158" fill="#e2e8f0" font-size="17" font-weight="700">Specification</text>
+  <text x="152" y="180" fill="#64748b" font-size="13" font-family="monospace">spec/*.md</text>
+  <text x="440" y="156" fill="#94a3b8" font-size="14">A precise description of the protocol and its trust assumptions,</text>
+  <text x="440" y="176" fill="#94a3b8" font-size="14">with every inferred choice marked so nothing is assumed silently.</text>
+
+  <!-- panel 2: symbolic -->
+  <rect x="80" y="226" width="1020" height="92" rx="12" fill="#0d1a30" stroke="#1e293b" stroke-width="1.4"/>
+  <circle cx="118" cy="272" r="16" fill="#16233d" stroke="#60a5fa" stroke-width="1.6"/>
+  <text x="118" y="277" text-anchor="middle" fill="#60a5fa" font-size="15" font-weight="700">2</text>
+  <text x="152" y="266" fill="#e2e8f0" font-size="17" font-weight="700">Symbolic proof</text>
+  <text x="152" y="288" fill="#64748b" font-size="13" font-family="monospace">Tamarin  &#183;  Dolev-Yao</text>
+  <text x="440" y="264" fill="#94a3b8" font-size="14">Machine-checks secrecy, authentication, and revocation across the</text>
+  <text x="440" y="284" fill="#94a3b8" font-size="14">changing membership. Found the attack, then verified the fix.</text>
+
+  <!-- panel 3: computational -->
+  <rect x="80" y="334" width="1020" height="92" rx="12" fill="#0d1a30" stroke="#1e293b" stroke-width="1.4"/>
+  <circle cx="118" cy="380" r="16" fill="#16233d" stroke="#2dd4bf" stroke-width="1.6"/>
+  <text x="118" y="385" text-anchor="middle" fill="#2dd4bf" font-size="15" font-weight="700">3</text>
+  <text x="152" y="374" fill="#e2e8f0" font-size="17" font-weight="700">Computational proof</text>
+  <text x="152" y="396" fill="#64748b" font-size="13" font-family="monospace">game-based reduction</text>
+  <text x="440" y="372" fill="#94a3b8" font-size="14">Reduces content confidentiality to standard AEAD and key-wrap</text>
+  <text x="440" y="392" fill="#94a3b8" font-size="14">security, by hand, with an explicit bound.</text>
+
+  <!-- panel 4: implementation -->
+  <rect x="80" y="442" width="1020" height="92" rx="12" fill="#0d1a30" stroke="#1e293b" stroke-width="1.4"/>
+  <circle cx="118" cy="488" r="16" fill="#16233d" stroke="#fbbf24" stroke-width="1.6"/>
+  <text x="118" y="493" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">4</text>
+  <text x="152" y="482" fill="#e2e8f0" font-size="17" font-weight="700">Implementation</text>
+  <text x="152" y="504" fill="#64748b" font-size="13" font-family="monospace">Rust  &#183;  14 tests</text>
+  <text x="440" y="480" fill="#94a3b8" font-size="14">Standard-vector tests for the primitives, property tests for the</text>
+  <text x="440" y="500" fill="#94a3b8" font-size="14">proof obligations, and the attack and fix as runnable tests.</text>
+
+  <!-- footer -->
+  <text x="590" y="576" text-anchor="middle" fill="#64748b" font-size="13.5">Two independent proofs reach the same verdict, and the implementation shows the assumptions hold in code.</text>
+</svg>
